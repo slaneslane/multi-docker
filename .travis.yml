@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+services:
+  - docker
+
+before_install:
+  - docker build -t slaneslane/react-tests -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true slaneslane/react-tests npm run test
+
+after_success:
+  - docker build -t slaneslane/multi-client ./client
+  - docker build -t slaneslane/multi-nginx ./nginx
+  - docker build -t slaneslane/multi-server ./server
+  - docker build -t slaneslane/multi-worker ./worker
+
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push slaneslane/multi-client
+  - docker push slaneslane/multi-nginx
+  - docker push slaneslane/multi-server
+  - docker push slaneslane/multi-worker
